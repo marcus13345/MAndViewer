@@ -1,6 +1,6 @@
 
 
-import static MAndApps.Engine.ANIMATION_CONSTANT;
+import static MAndEngine.Engine.ANIMATION_CONSTANT;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -10,12 +10,12 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import MAndApps.AppHelper;
-import MAndApps.BasicApp;
-import MAndApps.Engine;
-import MAndApps.Variable;
+import MAndEngine.AppHelper;
+import MAndEngine.BasicApp;
+import MAndEngine.Engine;
+import MAndEngine.Variable;
 
-public class Settings implements BasicApp {
+public class Viewer implements BasicApp {
 
 	private static final int WIDTH = 800, HEIGHT = 600;
 	

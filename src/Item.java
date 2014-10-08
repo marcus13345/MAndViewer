@@ -67,10 +67,7 @@ public class Item {
 				thumbnail = (getScaledImageFill(image, 80, 80));
 				path = file.getAbsolutePath();
 
-				// discard it as it won't fit the screen.
-				if (!(((double) image.getWidth() / image.getHeight()) <= (4 / 3d))) {
-					seemsLegit = false;
-				}
+				
 
 				name = "";
 				

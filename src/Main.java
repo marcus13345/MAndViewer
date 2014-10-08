@@ -1,4 +1,4 @@
-import MAndApps.Engine;
+import MAndEngine.Engine;
 
 
 public class Main {
@@ -8,7 +8,7 @@ public class Main {
 	
 	public Main() {
 		
-		Engine engine = new Engine(new String[] {"Settings"}, false);
+		Engine engine = new Engine(new String[] {"Viewer"}, false);
 		engine.run();
 	}
 }
