@@ -66,7 +66,7 @@ public class Viewer implements BasicApp {
 		// make sure we have our variable and file
 		// we can explicitly set them as we are trying to pick up where we left
 		// off
-		currentDirectoryVariable = new Variable("MAndWorks\\MAndApps\\Settings", "WallpaperSearchDirectory", defaultSearchDirectory, true);
+		currentDirectoryVariable = new Variable("MAndWorks\\MAndApps\\Settings", "WallpaperSearchDirectory", defaultSearchDirectory, false);
 		currentDirectoryFile = new File(currentDirectoryVariable.getValue());
 
 		// which we use, be it variable or file, is completely arbitrary here.
