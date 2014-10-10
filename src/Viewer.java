@@ -41,16 +41,16 @@ public class Viewer implements BasicApp {
 	private static File currentDirectoryFile;
 	private static Variable currentDirectoryVariable;
 
-	public static final int THUMB_MARGIN = 30;
-	public static final int FULL_WIDTH = THUMBNAIL_SIZE + THUMB_MARGIN;
-	public static final int Y_OFFSET = 470;
+	public static int THUMB_MARGIN = 30;
+	public static int FULL_WIDTH = THUMBNAIL_SIZE + THUMB_MARGIN;
+	public static int Y_OFFSET = 470;
 
-	public static final int X_OFFSET_SELECTION = (int) (THUMB_MARGIN + (selection * FULL_WIDTH) - (scroll * FULL_WIDTH));
+	public static int X_OFFSET_SELECTION = (int) (THUMB_MARGIN + (selection * FULL_WIDTH) - (scroll * FULL_WIDTH));
 
-	public static final int LEFT_BAR_WIDTH = FULL_WIDTH + THUMB_MARGIN;
-	public static final int INNER_FRAME_HEIGHT = (int) (((WIDTH - LEFT_BAR_WIDTH) / 4d) * 3d);
-	public static final int TOP_BAR_HEIGHT = HEIGHT - INNER_FRAME_HEIGHT;
-	public static final int INNER_FRAME_WIDTH = WIDTH - LEFT_BAR_WIDTH;
+	public static int LEFT_BAR_WIDTH = FULL_WIDTH + THUMB_MARGIN;
+	public static int INNER_FRAME_HEIGHT = (int) (((WIDTH - LEFT_BAR_WIDTH) / 4d) * 3d);
+	public static int TOP_BAR_HEIGHT = HEIGHT - INNER_FRAME_HEIGHT;
+	public static int INNER_FRAME_WIDTH = WIDTH - LEFT_BAR_WIDTH;
 
 	private static Thread populationThread;
 
@@ -201,7 +201,6 @@ public class Viewer implements BasicApp {
 				g.drawImage(items.get(i).getThumbnail(), THUMB_MARGIN, -1 + (int) (THUMB_MARGIN + (i * FULL_WIDTH) - (scroll * FULL_WIDTH)), null);
 
 			
-			
 			/*
 			 * g.setColor(Color.WHITE); g.drawRect(THUMB_MARGIN - 2, Y_OFFSET -
 			 * 2, THUMB_WIDTH + 3, THUMB_WIDTH + 3);
@@ -260,9 +259,15 @@ public class Viewer implements BasicApp {
 
 		}
 	}
-	
-	
 
+	/**
+	 * gets called every tick because of scaling, we dont particularly know the res...
+	 * @param image
+	 * @param width
+	 * @param height
+	 * @return
+	 * @throws IOException
+	 */
 	private static BufferedImage getScaledImage(BufferedImage image, int width, int height) throws IOException {
 		
 		int imageWidth = image.getWidth();
@@ -298,7 +303,7 @@ public class Viewer implements BasicApp {
 		Engine.log("after:    " + newImageWidth + " x " + newImageHeight);
 		
 		//do math, shove it on.
-		g.drawImage(newImage, 0, 0, null);
+		g.drawImage(newImage, (width - newImageWidth) / 2, (height - newImageHeight) / 2, null);
 		
 		//return dat
 		return buffer;
@@ -332,6 +337,25 @@ public class Viewer implements BasicApp {
 	@Override
 	public boolean visibleInMenu() {
 		return true;
+	}
+
+	@Override
+	public void resized(int width, int height) {
+
+		WIDTH = width;
+		HEIGHT = height;
+		
+		THUMB_MARGIN = 30;
+		FULL_WIDTH = THUMBNAIL_SIZE + THUMB_MARGIN;
+		Y_OFFSET = 470;
+
+		X_OFFSET_SELECTION = (int) (THUMB_MARGIN + (selection * FULL_WIDTH) - (scroll * FULL_WIDTH));
+
+		LEFT_BAR_WIDTH = FULL_WIDTH + THUMB_MARGIN;
+		TOP_BAR_HEIGHT = 50;
+		INNER_FRAME_HEIGHT = HEIGHT - TOP_BAR_HEIGHT;
+		INNER_FRAME_WIDTH = WIDTH - LEFT_BAR_WIDTH;
+
 	}
 
 }
