@@ -1,13 +1,16 @@
-
-
 import static MAndEngine.Engine.ANIMATION_CONSTANT;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.KeyEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import MAndEngine.AppHelper;
@@ -18,9 +21,9 @@ import MAndEngine.Variable;
 public class Viewer implements BasicApp {
 
 	public static final int THUMBNAIL_SIZE = 80;
-	
+
 	private static int WIDTH = 800, HEIGHT = 600;
-	
+
 	// we need to have a home in case all else fails.
 	private static final String defaultSearchDirectory = System.getenv("APPDATA") + "\\MAndWorks\\MAndApps\\Backgrounds\\";
 
@@ -41,16 +44,16 @@ public class Viewer implements BasicApp {
 	public static final int THUMB_MARGIN = 30;
 	public static final int FULL_WIDTH = THUMBNAIL_SIZE + THUMB_MARGIN;
 	public static final int Y_OFFSET = 470;
-	
-	public static final int X_OFFSET_SELECTION = (int)(THUMB_MARGIN + (selection * FULL_WIDTH) - (scroll * FULL_WIDTH));
-	
+
+	public static final int X_OFFSET_SELECTION = (int) (THUMB_MARGIN + (selection * FULL_WIDTH) - (scroll * FULL_WIDTH));
+
 	public static final int LEFT_BAR_WIDTH = FULL_WIDTH + THUMB_MARGIN;
-	public static final int INNER_FRAME_HEIGHT = (int)(((WIDTH - LEFT_BAR_WIDTH) / 4d) * 3d);
+	public static final int INNER_FRAME_HEIGHT = (int) (((WIDTH - LEFT_BAR_WIDTH) / 4d) * 3d);
 	public static final int TOP_BAR_HEIGHT = HEIGHT - INNER_FRAME_HEIGHT;
 	public static final int INNER_FRAME_WIDTH = WIDTH - LEFT_BAR_WIDTH;
-	
+
 	private static Thread populationThread;
-	
+
 	@Override
 	public Dimension getResolution() {
 		return new Dimension(WIDTH, HEIGHT);
@@ -92,7 +95,7 @@ public class Viewer implements BasicApp {
 			}
 		});
 		populationThread.start();
-		
+
 	}
 
 	private void repopulate() {
@@ -114,9 +117,9 @@ public class Viewer implements BasicApp {
 
 			// folderssss
 			for (String path : currentDirectoryFile.list()) {
-				System.out.println("folders...");
 				File file = new File(currentDirectoryFile.getAbsolutePath() + "\\" + path);
 				if (file.isDirectory()) {
+					System.out.println("folder: " + file.getAbsolutePath());
 					Item item = new Item(file.getAbsolutePath());
 					if (item.getSeemsLegit())
 						items.add(item);
@@ -125,9 +128,9 @@ public class Viewer implements BasicApp {
 
 			// filezzzz
 			for (String path : currentDirectoryFile.list()) {
-				System.out.println("files...");
 				File file = new File(currentDirectoryFile.getAbsolutePath() + "\\" + path);
 				if (!file.isDirectory()) {
+					System.out.println("file:   " + file.getAbsolutePath());
 					Item item = new Item(file.getAbsolutePath());
 					if (item.getSeemsLegit())
 						items.add(item);
@@ -157,59 +160,56 @@ public class Viewer implements BasicApp {
 	@Override
 	public void tick() {
 		int desiredScroll = selection;
-		
-		
+
 		scroll -= (scroll - desiredScroll) / (ANIMATION_CONSTANT);
-		
-		
+
 	}
 
 	@Override
 	public void render(Graphics2D g) {
 
 		try {
-			
-			
-			//this is the black box
-			//NOW IN GREY
+
+			// this is the black box
+			// NOW IN GREY
 			g.setColor(new Color(200, 200, 200));
 			g.fillRect(0, 0, WIDTH, HEIGHT);
 
-			try{
-				g.drawImage(items.get(selection).getImage(), WIDTH - items.get(selection).getImage().getWidth()/2 - INNER_FRAME_WIDTH/2, TOP_BAR_HEIGHT, null);
-			}catch(Exception e) {
-				//between ticks, nothing really big
+			try {
+				g.drawImage(getScaledImage(items.get(selection).getImage(), INNER_FRAME_WIDTH, INNER_FRAME_HEIGHT), LEFT_BAR_WIDTH, TOP_BAR_HEIGHT, null);
+			} catch (Exception e) {
+				// e.printStackTrace();
+				// between ticks, nothing really big
 			}
-			
-			
+
 			g.setColor(new Color(225, 225, 225));
 			g.fillRect(0, 0, WIDTH, TOP_BAR_HEIGHT);
 			g.setColor(new Color(255, 127, 0));
 			g.drawLine(0, TOP_BAR_HEIGHT - 1, WIDTH, TOP_BAR_HEIGHT - 1);
-			
+
 			g.setColor(new Color(240, 240, 240));
 			g.fillRect(0, 0, FULL_WIDTH + THUMB_MARGIN, HEIGHT);
 			g.setColor(new Color(255, 127, 0));
 			g.drawLine(LEFT_BAR_WIDTH - 1, 0, LEFT_BAR_WIDTH - 1, HEIGHT);
-			
-			g.setColor(new Color(35, 35, 35));
-			//g.setFont(Main.largerFont);
-			
-			g.drawString(currentDirectoryVariable.getValue(), LEFT_BAR_WIDTH + THUMB_MARGIN, TOP_BAR_HEIGHT / 2 + 5);
-			
-			
-			
-			for (int i = 0; i < items.size(); i++)
-				g.drawImage(items.get(i).getThumbnail(), THUMB_MARGIN,  -1 + (int)(THUMB_MARGIN + (i * FULL_WIDTH) - (scroll * FULL_WIDTH)), null);
 
-			/*
-			g.setColor(Color.WHITE);
-			g.drawRect(THUMB_MARGIN - 2, Y_OFFSET - 2, THUMB_WIDTH + 3, THUMB_WIDTH + 3);
+			g.setColor(new Color(35, 35, 35));
+			// g.setFont(Main.largerFont);
+
+			g.drawString(currentDirectoryVariable.getValue(), LEFT_BAR_WIDTH + THUMB_MARGIN, TOP_BAR_HEIGHT / 2 + 5);
+
+			for (int i = 0; i < items.size(); i++)
+				g.drawImage(items.get(i).getThumbnail(), THUMB_MARGIN, -1 + (int) (THUMB_MARGIN + (i * FULL_WIDTH) - (scroll * FULL_WIDTH)), null);
+
 			
-			g.setColor(Color.BLACK);
-			g.drawRect(THUMB_MARGIN - 1, Y_OFFSET - 1, THUMB_WIDTH + 1, THUMB_WIDTH + 1);
-			g.drawRect(THUMB_MARGIN - 3, Y_OFFSET - 3, THUMB_WIDTH + 5, THUMB_WIDTH + 5);
-			*/
+			
+			/*
+			 * g.setColor(Color.WHITE); g.drawRect(THUMB_MARGIN - 2, Y_OFFSET -
+			 * 2, THUMB_WIDTH + 3, THUMB_WIDTH + 3);
+			 * 
+			 * g.setColor(Color.BLACK); g.drawRect(THUMB_MARGIN - 1, Y_OFFSET -
+			 * 1, THUMB_WIDTH + 1, THUMB_WIDTH + 1); g.drawRect(THUMB_MARGIN -
+			 * 3, Y_OFFSET - 3, THUMB_WIDTH + 5, THUMB_WIDTH + 5);
+			 */
 		} catch (Exception e) {
 			g.setColor(Color.BLACK);
 			g.fillRect(0, 0, 800, 600);
@@ -224,16 +224,14 @@ public class Viewer implements BasicApp {
 	public void keyPressed(KeyEvent e) {
 
 		Engine.log("" + e.getKeyCode());
-		
-		if (e.getKeyCode() == KeyEvent.VK_D ||
-				e.getKeyCode() == KeyEvent.VK_S) {
+
+		if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_S) {
 			if (selection == items.size() - 1)
 				selection = 0;
 			else
 				selection++;
 		}
-		if (e.getKeyCode() == KeyEvent.VK_A ||
-				e.getKeyCode() == KeyEvent.VK_W) {
+		if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_W) {
 			selection--;
 			if (selection < 0)
 				selection = items.size() - 1;
@@ -246,16 +244,64 @@ public class Viewer implements BasicApp {
 				Engine.switchApps(AppHelper.getIDbyClass("MainMenu"));
 			}
 		}
-		if(e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			
-			if(selection == 0) {
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+
+			if (selection == 0) {
 				setCurrentDir(items.get(selection).getPath());
 				reload();
 			} else {
 				selection = 0;
 			}
-			
+
 		}
+		if (e.getKeyCode() == KeyEvent.VK_F5) {
+
+			reload();
+
+		}
+	}
+	
+	
+
+	private static BufferedImage getScaledImage(BufferedImage image, int width, int height) throws IOException {
+		
+		int imageWidth = image.getWidth();
+		int imageHeight = image.getHeight();
+
+		
+		double scaleY = (double) height / imageHeight;
+		double scaleX = (double) width  / imageWidth ;
+		
+		//fill or fit bit
+		if(scaleX > scaleY) scaleX = scaleY;
+		else scaleY = scaleX;
+		
+		//give us the transform object thing
+		AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
+		
+		//then make the scaling algorithm thing.
+		AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
+		
+		//out new image that we need to crop onto the buffer with the right dimensions.
+		BufferedImage newImage = bilinearScaleOp.filter(image, new BufferedImage((int) (imageWidth * scaleX), (int) (imageHeight * scaleY), image.getType()));
+		//Image newImage = image.getScaledInstance((int) (imageWidth * scaleX), (int) (imageWidth * scaleY), Image.SCALE_SMOOTH);
+		
+		//make the buffer
+		BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics g = buffer.getGraphics();
+		
+		int newImageWidth = newImage.getWidth(null);
+		int newImageHeight = newImage.getHeight(null);
+		
+		Engine.log("original: " + imageWidth + " x " + imageHeight);
+		Engine.log("new:      " + width + " x " + height);
+		Engine.log("after:    " + newImageWidth + " x " + newImageHeight);
+		
+		//do math, shove it on.
+		g.drawImage(newImage, 0, 0, null);
+		
+		//return dat
+		return buffer;
 	}
 
 	@Override

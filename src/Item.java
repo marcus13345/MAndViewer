@@ -44,11 +44,6 @@ public class Item {
 			File file = new File(path);
 			if (file.isDirectory()) {
 				thumbnail = ImageCreator.creatImageWithStripes(Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE, Color.BLUE);
-				image = ImageCreator.creatImageWithStripes(800, 600, Color.BLUE);
-				Graphics g = image.getGraphics();
-				g.setColor(Color.WHITE);
-				g.setFont(new Font("Courier", Font.BOLD, 15));
-				g.drawString("" + path, 100, 100);
 				
 				name = file.getName();
 				
@@ -56,7 +51,6 @@ public class Item {
 
 				// try and do the image thing!
 				image = ImageIO.read(file);
-				image = getScaledImage(image, 800, 600);
 				thumbnail = (getScaledImage(image, 80, 80));
 				path = file.getAbsolutePath();
 
@@ -108,7 +102,6 @@ public class Item {
 		//return dat
 		return buffer;
 	}
-
 	public BufferedImage getImage() {
 		return image;
 	}
