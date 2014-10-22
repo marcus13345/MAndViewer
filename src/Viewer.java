@@ -358,4 +358,10 @@ public class Viewer implements BasicApp {
 
 	}
 
+	@Override
+	public void click() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
