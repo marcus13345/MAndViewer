@@ -1,7 +1,11 @@
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -20,18 +24,17 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import MAndEngine.Engine;
-import MAndEngine.ImageCreator;
 
 public class Item {
-	
-	//to track when to advance frame
+
+	// to track when to advance frame
 	private long lastTime = System.currentTimeMillis();
-	//every how many ms?
+	// every how many ms?
 	private long interval = 100;
-	
-	//because we need something to tell us which image we're looking at!
+
+	// because we need something to tell us which image we're looking at!
 	private int pointer = 0;
-	
+
 	// cropped to a thumb nail, of size 80*80
 	private final BufferedImage thumbnail;
 
@@ -60,8 +63,48 @@ public class Item {
 		try {
 			File file = new File(path);
 			if (file.isDirectory()) {
-				thumbnail = ImageCreator.creatImageWithStripes(Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE, Color.BLUE);
-
+				// thumbnail =
+				// ImageCreator.creatImageWithStripes(Viewer.THUMBNAIL_SIZE,
+				// Viewer.THUMBNAIL_SIZE, Color.BLUE);
+				try {
+					//just... like its not hard but its not properly spaced out to be readable
+					//so just trust drunk on life marcus that it tooootally works.
+					//doesn't mess with image yet though so feel free to implement that.
+					//yeah, TODO...
+					Font font = new Font("Serif", Font.PLAIN, 50);
+					thumbnail = new BufferedImage(Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE, BufferedImage.TYPE_INT_ARGB);
+					Graphics2D g = (Graphics2D) thumbnail.getGraphics();
+					g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+					g.setFont(font);
+					FontMetrics metrics = g.getFontMetrics();
+					String string = "" + file.getName();
+					if(string.length() > 8) {
+						string = string.substring(0, 9) + "...";
+					}
+					int padding = 5;
+					int frameSize = Viewer.THUMBNAIL_SIZE - 2 * padding;
+					Rectangle2D bounds = metrics.getStringBounds(string, g);
+					BufferedImage text = new BufferedImage((int) bounds.getWidth() + 2, (int) bounds.getHeight() + 2 + metrics.getMaxDescent(), BufferedImage.TYPE_INT_ARGB);
+					Graphics2D textGraphics = (Graphics2D) text.getGraphics();
+					textGraphics.setFont(font);
+					textGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+					textGraphics.setColor(Color.BLACK);
+					textGraphics.drawString(string, 1, (int)bounds.getHeight());
+					text = fitImageScale(text, frameSize, frameSize);
+					g.setColor(new Color(220, 220, 220));
+					g.fillRect(0, 0, Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE);
+					g.setColor(new Color(170, 170, 170));
+					g.drawRect(0, 0, Viewer.THUMBNAIL_SIZE - 1, Viewer.THUMBNAIL_SIZE - 1);
+					g.drawImage(text, padding, padding, null);
+					
+					//now try to make a mini album thing showing us what we're missing!
+					//queue collage mode
+					
+					
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 				name = file.getName();
 
 			} else {
@@ -69,13 +112,13 @@ public class Item {
 					// try and do the image thing!
 					images = new BufferedImage[] { ImageIO.read(file) };
 				} else {
-					//do da gif ting! O YA, I CAN DO DAT NAO
+					// do da gif ting! O YA, I CAN DO DAT NAO
 					ArrayList<BufferedImage> imageList = getGif(path);
 					images = new BufferedImage[imageList.size()];
-					for(int i = 0; i < imageList.size(); i ++)
+					for (int i = 0; i < imageList.size(); i++)
 						images[i] = imageList.get(i);
 				}
-				thumbnail = (getScaledImage(images[0], 80, 80));
+				thumbnail = (fillImageScale(images[0], 80, 80));
 				path = file.getAbsolutePath();
 
 				name = "";
@@ -95,7 +138,7 @@ public class Item {
 		return seemsLegit;
 	}
 
-	private static BufferedImage getScaledImage(BufferedImage image, int width, int height) throws IOException {
+	private static BufferedImage fillImageScale(BufferedImage image, int width, int height) throws IOException {
 
 		int imageWidth = image.getWidth();
 		int imageHeight = image.getHeight();
@@ -139,10 +182,56 @@ public class Item {
 		return buffer;
 	}
 
+
+	private static BufferedImage fitImageScale(BufferedImage image, int width, int height) throws IOException {
+
+		int imageWidth = image.getWidth();
+		int imageHeight = image.getHeight();
+
+		double scaleY = (double) height / imageHeight;
+		double scaleX = (double) width / imageWidth;
+
+		// fill or fit bit
+		//heh, hutch
+		if (scaleX > scaleY)
+			scaleX = scaleY;
+		else
+			scaleY = scaleX;
+
+		// give us the transform object thing
+		AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
+
+		// then make the scaling algorithm thing.
+		AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
+
+		// out new image that we need to crop onto the buffer with the right
+		// dimensions.
+		BufferedImage newImage = bilinearScaleOp.filter(image, new BufferedImage((int) (imageWidth * scaleX), (int) (imageHeight * scaleY), image.getType()));
+		// Image newImage = image.getScaledInstance((int) (imageWidth * scaleX),
+		// (int) (imageWidth * scaleY), Image.SCALE_SMOOTH);
+
+		// make the buffer
+		BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics g = buffer.getGraphics();
+
+		int newImageWidth = newImage.getWidth(null);
+		int newImageHeight = newImage.getHeight(null);
+
+		Engine.log("original: " + imageWidth + " x " + imageHeight);
+		Engine.log("new:      " + width + " x " + height);
+		Engine.log("after:    " + newImageWidth + " x " + newImageHeight);
+
+		// do math, shove it on.
+		g.drawImage(newImage, (width - newImageWidth) / 2, (height - newImageHeight) / 2, null);
+
+		// return dat
+		return buffer;
+	}
+
 	public BufferedImage getImage() {
-		
+
 		if (System.currentTimeMillis() > lastTime + interval) {
-			pointer ++;
+			pointer++;
 			if (pointer == image.length) {
 				pointer = 0;
 			}
@@ -150,7 +239,7 @@ public class Item {
 		}
 
 		System.out.println(pointer);
-		
+
 		return image[pointer];
 	}
 
@@ -165,7 +254,7 @@ public class Item {
 	public String getName() {
 		return name;
 	}
-	
+
 	public static ArrayList<BufferedImage> getGif(String path) {
 		try {
 
@@ -207,9 +296,9 @@ public class Item {
 							imageAttr.put(imageatt[k], Integer.valueOf(attnode.getNodeValue()));
 
 						}
-						
-						//if first time round
-						if(i == 0)
+
+						// if first time round
+						if (i == 0)
 							master = new BufferedImage(imageAttr.get("imageWidth"), imageAttr.get("imageHeight"), BufferedImage.TYPE_INT_RGB);
 
 						master.getGraphics().drawImage(image, imageAttr.get("imageLeftPosition"), imageAttr.get("imageTopPosition"), null);
@@ -222,7 +311,7 @@ public class Item {
 				images.add(newThing);
 
 			}
-			
+
 			return images;
 
 		} catch (IOException e) {
