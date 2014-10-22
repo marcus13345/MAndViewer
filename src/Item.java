@@ -6,16 +6,32 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.ImageInputStream;
+
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import MAndEngine.Engine;
 import MAndEngine.ImageCreator;
 
 public class Item {
-
-	private static int scaleToHeight;
-
+	
+	//to track when to advance frame
+	private long lastTime = System.currentTimeMillis();
+	//every how many ms?
+	private long interval = 100;
+	
+	//because we need something to tell us which image we're looking at!
+	private int pointer = 0;
+	
 	// cropped to a thumb nail, of size 80*80
 	private final BufferedImage thumbnail;
 
@@ -53,8 +69,11 @@ public class Item {
 					// try and do the image thing!
 					images = new BufferedImage[] { ImageIO.read(file) };
 				} else {
-					//images = ImageIO.
-					seemsLegit = false;
+					//do da gif ting! O YA, I CAN DO DAT NAO
+					ArrayList<BufferedImage> imageList = getGif(path);
+					images = new BufferedImage[imageList.size()];
+					for(int i = 0; i < imageList.size(); i ++)
+						images[i] = imageList.get(i);
 				}
 				thumbnail = (getScaledImage(images[0], 80, 80));
 				path = file.getAbsolutePath();
@@ -121,7 +140,18 @@ public class Item {
 	}
 
 	public BufferedImage getImage() {
-		return image[0];
+		
+		if (System.currentTimeMillis() > lastTime + interval) {
+			pointer ++;
+			if (pointer == image.length) {
+				pointer = 0;
+			}
+			lastTime = System.currentTimeMillis();
+		}
+
+		System.out.println(pointer);
+		
+		return image[pointer];
 	}
 
 	public BufferedImage getThumbnail() {
@@ -135,4 +165,71 @@ public class Item {
 	public String getName() {
 		return name;
 	}
+	
+	public static ArrayList<BufferedImage> getGif(String path) {
+		try {
+
+			ArrayList<BufferedImage> images = new ArrayList<BufferedImage>();
+
+			String[] imageatt = new String[] { "imageLeftPosition", "imageTopPosition", "imageWidth", "imageHeight" };
+
+			ImageReader reader = (ImageReader) ImageIO.getImageReadersByFormatName("gif").next();
+			ImageInputStream ciis = ImageIO.createImageInputStream(new File(path));
+			reader.setInput(ciis, false);
+
+			int noi = reader.getNumImages(true);
+
+			BufferedImage master = null;
+
+			for (int i = 0; i < noi; i++) {
+
+				BufferedImage image = reader.read(i);
+				IIOMetadata metadata = reader.getImageMetadata(i);
+
+				Node tree = metadata.getAsTree("javax_imageio_gif_image_1.0");
+
+				NodeList children = tree.getChildNodes();
+
+				for (int j = 0; j < children.getLength(); j++) {
+
+					Node nodeItem = children.item(j);
+
+					if (nodeItem.getNodeName().equals("ImageDescriptor")) {
+
+						Map<String, Integer> imageAttr = new HashMap<String, Integer>();
+
+						for (int k = 0; k < imageatt.length; k++) {
+
+							NamedNodeMap attr = nodeItem.getAttributes();
+
+							Node attnode = attr.getNamedItem(imageatt[k]);
+
+							imageAttr.put(imageatt[k], Integer.valueOf(attnode.getNodeValue()));
+
+						}
+						
+						//if first time round
+						if(i == 0)
+							master = new BufferedImage(imageAttr.get("imageWidth"), imageAttr.get("imageHeight"), BufferedImage.TYPE_INT_RGB);
+
+						master.getGraphics().drawImage(image, imageAttr.get("imageLeftPosition"), imageAttr.get("imageTopPosition"), null);
+
+					}
+				}
+
+				BufferedImage newThing = new BufferedImage(master.getWidth(), master.getHeight(), master.getType());
+				newThing.getGraphics().drawImage(master, 0, 0, null);
+				images.add(newThing);
+
+			}
+			
+			return images;
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 }
