@@ -9,6 +9,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,11 +40,13 @@ public class Item {
 	private final BufferedImage thumbnail;
 
 	// the original image, not cropped or anything.
-	private final BufferedImage[] image;
+	private BufferedImage[] image;
 
 	// Absolute path, i think.
 	private final String path;
 	private String name;
+
+	private boolean enterable = true;
 
 	// we need this because im scared.
 	// if literally anything in the creating of an item
@@ -61,53 +64,64 @@ public class Item {
 		BufferedImage[] images = null;
 
 		try {
-			File file = new File(path);
+			final File file = new File(path);
 			if (file.isDirectory()) {
-				// thumbnail =
-				// ImageCreator.creatImageWithStripes(Viewer.THUMBNAIL_SIZE,
-				// Viewer.THUMBNAIL_SIZE, Color.BLUE);
 				try {
-					//just... like its not hard but its not properly spaced out to be readable
-					//so just trust drunk on life marcus that it tooootally works.
-					//doesn't mess with image yet though so feel free to implement that.
-					//yeah, TODO...
-					Font font = new Font("Serif", Font.PLAIN, 50);
-					thumbnail = new BufferedImage(Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE, BufferedImage.TYPE_INT_ARGB);
-					Graphics2D g = (Graphics2D) thumbnail.getGraphics();
-					g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-					g.setFont(font);
-					FontMetrics metrics = g.getFontMetrics();
-					String string = "" + file.getName();
-					if(string.length() > 8) {
-						string = string.substring(0, 9) + "...";
+					//so many locals, had to split it up
+					//TODO methodize this or something
+					{
+						// just... like its not hard but its not properly spaced
+						// out to be readable
+						// so just trust drunk on life marcus that it tooootally
+						// works.
+						// doesn't mess with image yet though so feel free to
+						// implement that.
+						// yeah, TODO...
+						Font font = new Font("Serif", Font.PLAIN, 50);
+						thumbnail = new BufferedImage(Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE, BufferedImage.TYPE_INT_ARGB);
+						Graphics2D g = (Graphics2D) thumbnail.getGraphics();
+						g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+						g.setFont(font);
+						FontMetrics metrics = g.getFontMetrics();
+						String string = "" + file.getName();
+						if (string.length() > 8) {
+							string = string.substring(0, 9) + "...";
+						}
+						int padding = 5;
+						int frameSize = Viewer.THUMBNAIL_SIZE - 2 * padding;
+						Rectangle2D bounds = metrics.getStringBounds(string, g);
+						BufferedImage text = new BufferedImage((int) bounds.getWidth() + 2, (int) bounds.getHeight() + 2 + metrics.getMaxDescent(), BufferedImage.TYPE_INT_ARGB);
+						Graphics2D textGraphics = (Graphics2D) text.getGraphics();
+						textGraphics.setFont(font);
+						textGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+						textGraphics.setColor(Color.BLACK);
+						textGraphics.drawString(string, 1, (int) bounds.getHeight());
+						text = fitImageScale(text, frameSize, frameSize);
+						g.setColor(new Color(220, 220, 220));
+						g.fillRect(0, 0, Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE);
+						g.setColor(new Color(170, 170, 170));
+						g.drawRect(0, 0, Viewer.THUMBNAIL_SIZE - 1, Viewer.THUMBNAIL_SIZE - 1);
+						g.drawImage(text, padding, padding, null);
+
+						// now try to make a mini album thing showing us what
+						// we're missing!
+						// queue collage mode
 					}
-					int padding = 5;
-					int frameSize = Viewer.THUMBNAIL_SIZE - 2 * padding;
-					Rectangle2D bounds = metrics.getStringBounds(string, g);
-					BufferedImage text = new BufferedImage((int) bounds.getWidth() + 2, (int) bounds.getHeight() + 2 + metrics.getMaxDescent(), BufferedImage.TYPE_INT_ARGB);
-					Graphics2D textGraphics = (Graphics2D) text.getGraphics();
-					textGraphics.setFont(font);
-					textGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-					textGraphics.setColor(Color.BLACK);
-					textGraphics.drawString(string, 1, (int)bounds.getHeight());
-					text = fitImageScale(text, frameSize, frameSize);
-					g.setColor(new Color(220, 220, 220));
-					g.fillRect(0, 0, Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE);
-					g.setColor(new Color(170, 170, 170));
-					g.drawRect(0, 0, Viewer.THUMBNAIL_SIZE - 1, Viewer.THUMBNAIL_SIZE - 1);
-					g.drawImage(text, padding, padding, null);
 					
-					//now try to make a mini album thing showing us what we're missing!
-					//queue collage mode
+					// the image block for creating a mini album
 					
+					new Thread(new Runnable() {public void run() {
+						createAlbum(file);
+					}}).start();
 					
-					
+
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				name = file.getName();
 
-			} else {
+			} else if (file.isFile()) {
+				enterable = false;
 				if (!path.endsWith(".gif")) {
 					// try and do the image thing!
 					images = new BufferedImage[] { ImageIO.read(file) };
@@ -118,20 +132,97 @@ public class Item {
 					for (int i = 0; i < imageList.size(); i++)
 						images[i] = imageList.get(i);
 				}
-				thumbnail = (fillImageScale(images[0], 80, 80));
+				thumbnail = (fillImageScale(images[0], Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE));
 				path = file.getAbsolutePath();
 
-				name = "";
+				name = file.getName();
+			} else if (path.equals("\\drives")) {
+
+				name = "Drives";
+
+				// just... like its not hard but its not properly spaced out to
+				// be readable
+				// so just trust drunk on life marcus that it tooootally works.
+				// doesn't mess with image yet though so feel free to implement
+				// that.
+				// yeah, TODO...
+				Font font = new Font("Serif", Font.PLAIN, 50);
+				thumbnail = new BufferedImage(Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE, BufferedImage.TYPE_INT_ARGB);
+				Graphics2D g = (Graphics2D) thumbnail.getGraphics();
+				g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				g.setFont(font);
+				FontMetrics metrics = g.getFontMetrics();
+				String string = "Drives";
+				int padding = 5;
+				int frameSize = Viewer.THUMBNAIL_SIZE - 2 * padding;
+				Rectangle2D bounds = metrics.getStringBounds(string, g);
+				BufferedImage text = new BufferedImage((int) bounds.getWidth() + 2, (int) bounds.getHeight() + 2 + metrics.getMaxDescent(), BufferedImage.TYPE_INT_ARGB);
+				Graphics2D textGraphics = (Graphics2D) text.getGraphics();
+				textGraphics.setFont(font);
+				textGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				textGraphics.setColor(Color.BLACK);
+				textGraphics.drawString(string, 1, (int) bounds.getHeight());
+				text = fitImageScale(text, frameSize, frameSize);
+				g.setColor(new Color(220, 220, 220));
+				g.fillRect(0, 0, Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE);
+				g.setColor(new Color(170, 170, 170));
+				g.drawRect(0, 0, Viewer.THUMBNAIL_SIZE - 1, Viewer.THUMBNAIL_SIZE - 1);
+				g.drawImage(text, padding, padding, null);
+
 			}
 		} catch (Exception e) {
 			seemsLegit = false;
-			System.out.println("wat: " + e.getMessage());
-			System.out.println("wat was in " + path);
 		}
 
 		this.image = images;
 		this.path = path;
 		this.thumbnail = thumbnail;
+	}
+	
+	private void createAlbum(final File file) {
+		
+		File[] files = file.listFiles(new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File file, String name) {
+				return name.endsWith(".png") || name.endsWith(".jpg");
+			}
+		});
+		
+		
+		BufferedImage image = new BufferedImage(1000, 1000, BufferedImage.TYPE_INT_ARGB);
+		this.image = new BufferedImage[] {image};
+		Graphics2D graphics = (Graphics2D)image.getGraphics();
+		
+		//could be derived but imma lazy personnn
+		int currentFileCount = 0; //TODO do dat later
+		
+		final int ROWS = 2;
+		final int COLUMNS = 3;
+		
+		
+		for(int i = 0; i < ROWS; i ++) {
+			
+			for(int j = 0; j < COLUMNS; j ++) {
+				
+				boolean failed = false;
+				
+				try{
+					File currentFile = files[currentFileCount];
+					BufferedImage current = ImageIO.read(currentFile);
+					current = fillImageScale(current, (1000 - (15*(2 + 1))) / 2, (1000 - (15*(2 + 1))) / 2);
+					graphics.drawImage(current, (j * (15 + ((1000 - (15*(2 + 1))) / 2))), (i * (15 + ((1000 - (15*(2 + 1))) / 2))), null);
+				}catch(Exception e) {
+					failed = true;
+				}
+				
+				if(failed) j --;
+				if(currentFileCount == files.length) i = j = 2;
+				currentFileCount ++;
+			}
+			
+		}
+		
 	}
 
 	public boolean getSeemsLegit() {
@@ -171,17 +262,12 @@ public class Item {
 		int newImageWidth = newImage.getWidth(null);
 		int newImageHeight = newImage.getHeight(null);
 
-		Engine.log("original: " + imageWidth + " x " + imageHeight);
-		Engine.log("new:      " + width + " x " + height);
-		Engine.log("after:    " + newImageWidth + " x " + newImageHeight);
-
 		// do math, shove it on.
 		g.drawImage(newImage, (width - newImageWidth) / 2, (height - newImageHeight) / 2, null);
 
 		// return dat
 		return buffer;
 	}
-
 
 	private static BufferedImage fitImageScale(BufferedImage image, int width, int height) throws IOException {
 
@@ -192,7 +278,7 @@ public class Item {
 		double scaleX = (double) width / imageWidth;
 
 		// fill or fit bit
-		//heh, hutch
+		// heh, hutch
 		if (scaleX > scaleY)
 			scaleX = scaleY;
 		else
@@ -207,8 +293,6 @@ public class Item {
 		// out new image that we need to crop onto the buffer with the right
 		// dimensions.
 		BufferedImage newImage = bilinearScaleOp.filter(image, new BufferedImage((int) (imageWidth * scaleX), (int) (imageHeight * scaleY), image.getType()));
-		// Image newImage = image.getScaledInstance((int) (imageWidth * scaleX),
-		// (int) (imageWidth * scaleY), Image.SCALE_SMOOTH);
 
 		// make the buffer
 		BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -216,10 +300,6 @@ public class Item {
 
 		int newImageWidth = newImage.getWidth(null);
 		int newImageHeight = newImage.getHeight(null);
-
-		Engine.log("original: " + imageWidth + " x " + imageHeight);
-		Engine.log("new:      " + width + " x " + height);
-		Engine.log("after:    " + newImageWidth + " x " + newImageHeight);
 
 		// do math, shove it on.
 		g.drawImage(newImage, (width - newImageWidth) / 2, (height - newImageHeight) / 2, null);
@@ -237,8 +317,6 @@ public class Item {
 			}
 			lastTime = System.currentTimeMillis();
 		}
-
-		System.out.println(pointer);
 
 		return image[pointer];
 	}
@@ -319,6 +397,10 @@ public class Item {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public boolean isEnterable() {
+		return enterable;
 	}
 
 }

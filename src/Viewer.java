@@ -61,7 +61,10 @@ public class Viewer implements BasicApp {
 
 	private void setCurrentDir(String path) {
 		currentDirectoryVariable.setValue(path);
-		currentDirectoryFile = new File(path);
+		if (!path.equals("\\drives"))
+			currentDirectoryFile = new File(path);
+		else
+			currentDirectoryFile = null;
 	}
 
 	@Override
@@ -87,14 +90,23 @@ public class Viewer implements BasicApp {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		populationThread = new Thread(new Runnable() {
-			public void run() {
+		if (currentDirectoryFile != null) {
+			populationThread = new Thread(new Runnable() {
+				public void run() {
 
-				repopulate();
+					repopulate();
 
+				}
+			});
+			populationThread.start();
+		} else {
+			for (File f : File.listRoots()) {
+				Item item = new Item(f.getAbsolutePath());
+				if(item.getSeemsLegit()) {
+					items.add(item);
+				}
 			}
-		});
-		populationThread.start();
+		}
 
 	}
 
@@ -102,24 +114,22 @@ public class Viewer implements BasicApp {
 
 		if (currentDirectoryFile.isDirectory()) {
 
-			System.out.println("adding?");
 			// parent?
 			String parent = currentDirectoryFile.getParent();
 			if (parent != null) {
-				System.out.println("adding parent?");
 				Item item = new Item(parent);
 				if (item.getSeemsLegit()) {
-					System.out.println("added.");
 					items.add(item);
 				}
+			} else {
+				Item item = new Item("\\drives");
+				items.add(item);
 			}
-			System.out.println("k?");
 
 			// folderssss
 			for (String path : currentDirectoryFile.list()) {
 				File file = new File(currentDirectoryFile.getAbsolutePath() + "\\" + path);
 				if (file.isDirectory()) {
-					System.out.println("folder: " + file.getAbsolutePath());
 					Item item = new Item(file.getAbsolutePath());
 					if (item.getSeemsLegit())
 						items.add(item);
@@ -130,7 +140,6 @@ public class Viewer implements BasicApp {
 			for (String path : currentDirectoryFile.list()) {
 				File file = new File(currentDirectoryFile.getAbsolutePath() + "\\" + path);
 				if (!file.isDirectory()) {
-					System.out.println("file:   " + file.getAbsolutePath());
 					Item item = new Item(file.getAbsolutePath());
 					if (item.getSeemsLegit())
 						items.add(item);
@@ -200,7 +209,6 @@ public class Viewer implements BasicApp {
 			for (int i = 0; i < items.size(); i++)
 				g.drawImage(items.get(i).getThumbnail(), THUMB_MARGIN, -1 + (int) (THUMB_MARGIN + (i * FULL_WIDTH) - (scroll * FULL_WIDTH)), null);
 
-			
 			/*
 			 * g.setColor(Color.WHITE); g.drawRect(THUMB_MARGIN - 2, Y_OFFSET -
 			 * 2, THUMB_WIDTH + 3, THUMB_WIDTH + 3);
@@ -222,8 +230,6 @@ public class Viewer implements BasicApp {
 	@Override
 	public void keyPressed(KeyEvent e) {
 
-		Engine.log("" + e.getKeyCode());
-
 		if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_S) {
 			if (selection == items.size() - 1)
 				selection = 0;
@@ -236,11 +242,9 @@ public class Viewer implements BasicApp {
 				selection = items.size() - 1;
 		}
 		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-			if (new File(items.get(selection).getPath()).isDirectory()) {
+			if (items.get(selection).isEnterable()) {
 				setCurrentDir(items.get(selection).getPath());
 				reload();
-			} else {
-				Engine.switchApps(AppHelper.getIDbyClass("MainMenu"));
 			}
 		}
 		if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
@@ -261,7 +265,9 @@ public class Viewer implements BasicApp {
 	}
 
 	/**
-	 * gets called every tick because of scaling, we dont particularly know the res...
+	 * gets called every tick because of scaling, we dont particularly know the
+	 * res...
+	 * 
 	 * @param image
 	 * @param width
 	 * @param height
@@ -269,43 +275,42 @@ public class Viewer implements BasicApp {
 	 * @throws IOException
 	 */
 	private static BufferedImage getScaledImage(BufferedImage image, int width, int height) throws IOException {
-		
+
 		int imageWidth = image.getWidth();
 		int imageHeight = image.getHeight();
 
-		
 		double scaleY = (double) height / imageHeight;
-		double scaleX = (double) width  / imageWidth ;
-		
-		//fill or fit bit
-		if(scaleX > scaleY) scaleX = scaleY;
-		else scaleY = scaleX;
-		
-		//give us the transform object thing
+		double scaleX = (double) width / imageWidth;
+
+		// fill or fit bit
+		if (scaleX > scaleY)
+			scaleX = scaleY;
+		else
+			scaleY = scaleX;
+
+		// give us the transform object thing
 		AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
-		
-		//then make the scaling algorithm thing.
+
+		// then make the scaling algorithm thing.
 		AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
-		
-		//out new image that we need to crop onto the buffer with the right dimensions.
+
+		// out new image that we need to crop onto the buffer with the right
+		// dimensions.
 		BufferedImage newImage = bilinearScaleOp.filter(image, new BufferedImage((int) (imageWidth * scaleX), (int) (imageHeight * scaleY), image.getType()));
-		//Image newImage = image.getScaledInstance((int) (imageWidth * scaleX), (int) (imageWidth * scaleY), Image.SCALE_SMOOTH);
-		
-		//make the buffer
+		// Image newImage = image.getScaledInstance((int) (imageWidth * scaleX),
+		// (int) (imageWidth * scaleY), Image.SCALE_SMOOTH);
+
+		// make the buffer
 		BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = buffer.getGraphics();
-		
+
 		int newImageWidth = newImage.getWidth(null);
 		int newImageHeight = newImage.getHeight(null);
-		
-		Engine.log("original: " + imageWidth + " x " + imageHeight);
-		Engine.log("new:      " + width + " x " + height);
-		Engine.log("after:    " + newImageWidth + " x " + newImageHeight);
-		
-		//do math, shove it on.
+
+		// do math, shove it on.
 		g.drawImage(newImage, (width - newImageWidth) / 2, (height - newImageHeight) / 2, null);
-		
-		//return dat
+
+		// return dat
 		return buffer;
 	}
 
@@ -344,7 +349,7 @@ public class Viewer implements BasicApp {
 
 		WIDTH = width;
 		HEIGHT = height;
-		
+
 		THUMB_MARGIN = 30;
 		FULL_WIDTH = THUMBNAIL_SIZE + THUMB_MARGIN;
 		Y_OFFSET = 470;
@@ -361,7 +366,7 @@ public class Viewer implements BasicApp {
 	@Override
 	public void click() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }
