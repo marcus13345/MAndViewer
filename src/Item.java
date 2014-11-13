@@ -24,8 +24,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import MAndEngine.Engine;
-
 public class Item {
 
 	// to track when to advance frame
@@ -136,6 +134,9 @@ public class Item {
 				path = file.getAbsolutePath();
 
 				name = file.getName();
+				if(name.endsWith(".enc")) {
+					name = Viewer.encryptor.decryptName(name.substring(0, name.length() - 4));
+				}
 			} else if (path.equals("\\drives")) {
 
 				name = "Drives";

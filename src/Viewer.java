@@ -54,6 +54,8 @@ public class Viewer implements BasicApp {
 
 	private static Thread populationThread;
 
+	public static Encryptor encryptor = new Encryptor("bcnsfw");
+	
 	@Override
 	public Dimension getResolution() {
 		return new Dimension(WIDTH, HEIGHT);
