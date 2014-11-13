@@ -198,7 +198,7 @@ public class Item {
 		int currentFileCount = 0; //TODO do dat later
 		
 		final int ROWS = 2;
-		final int COLUMNS = 3;
+		final int COLUMNS = 2;
 		
 		
 		for(int i = 0; i < ROWS; i ++) {

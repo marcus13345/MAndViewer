@@ -204,11 +204,20 @@ public class Viewer implements BasicApp {
 			g.setColor(new Color(35, 35, 35));
 			// g.setFont(Main.largerFont);
 
-			g.drawString(currentDirectoryVariable.getValue(), LEFT_BAR_WIDTH + THUMB_MARGIN, TOP_BAR_HEIGHT / 2 + 5);
+			g.drawString(currentDirectoryVariable.getValue(), LEFT_BAR_WIDTH + THUMB_MARGIN, TOP_BAR_HEIGHT / 2 - 3);
+			g.drawString(items.get(selection).getName(), LEFT_BAR_WIDTH + THUMB_MARGIN, TOP_BAR_HEIGHT / 2 + 9);
 
-			for (int i = 0; i < items.size(); i++)
+			final int SIZE = Viewer.THUMBNAIL_SIZE + THUMB_MARGIN;
+			int derp = 0;
+			
+			for (int i = ((int)(scroll - 1)); i < items.size(); i++) {
+				if(i >= 0)
 				g.drawImage(items.get(i).getThumbnail(), THUMB_MARGIN, -1 + (int) (THUMB_MARGIN + (i * FULL_WIDTH) - (scroll * FULL_WIDTH)), null);
-
+				derp ++;
+			}
+			
+			//g.drawString("" + derp, LEFT_BAR_WIDTH + THUMB_MARGIN, TOP_BAR_HEIGHT / 2 - 12);
+			
 			/*
 			 * g.setColor(Color.WHITE); g.drawRect(THUMB_MARGIN - 2, Y_OFFSET -
 			 * 2, THUMB_WIDTH + 3, THUMB_WIDTH + 3);
