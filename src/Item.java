@@ -135,7 +135,7 @@ public class Item {
 
 				name = file.getName();
 				if(name.endsWith(".enc")) {
-					name = Viewer.encryptor.decryptName(name.substring(0, name.length() - 4));
+					name = Viewer.encryptor.nameTable.decrypt(name.substring(0, name.length() - 4));
 				}
 			} else if (path.equals("\\drives")) {
 
