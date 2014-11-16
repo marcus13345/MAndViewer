@@ -25,7 +25,7 @@ public class Viewer implements BasicApp {
 	private static int WIDTH = 800, HEIGHT = 600;
 
 	// we need to have a home in case all else fails.
-	private static final String defaultSearchDirectory = System.getenv("APPDATA") + "\\MAndWorks\\MAndApps\\Backgrounds\\";
+	private static final String defaultSearchDirectory = System.getenv("USERPROFILE") + "\\Desktop";
 
 	// current selection
 	private static int selection = 0;
@@ -74,7 +74,7 @@ public class Viewer implements BasicApp {
 		// make sure we have our variable and file
 		// we can explicitly set them as we are trying to pick up where we left
 		// off
-		currentDirectoryVariable = new Variable("MAndWorks\\MAndApps\\Settings", "WallpaperSearchDirectory", defaultSearchDirectory, false);
+		currentDirectoryVariable = new Variable("MAndWorks\\MAndViewer", "currentDirectory", defaultSearchDirectory, false);
 		currentDirectoryFile = new File(currentDirectoryVariable.getValue());
 
 		// which we use, be it variable or file, is completely arbitrary here.
