@@ -24,6 +24,11 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * 
+ * @author Marcus
+ *
+ */
 public class Item {
 
 	// to track when to advance frame
