@@ -63,6 +63,10 @@ public class Item {
 
 		try {
 			final File file = new File(path);
+			name = file.getName();
+			if(name.endsWith(".enc")) {
+				name = Viewer.encryptor.nameTable.decrypt(name.substring(0, name.length() - 4));
+			}
 			if (file.isDirectory()) {
 				try {
 					//so many locals, had to split it up
@@ -81,7 +85,7 @@ public class Item {
 						g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 						g.setFont(font);
 						FontMetrics metrics = g.getFontMetrics();
-						String string = "" + file.getName();
+						String string = "" + name;
 						if (string.length() > 8) {
 							string = string.substring(0, 9) + "...";
 						}
@@ -116,11 +120,10 @@ public class Item {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				name = file.getName();
-
+				
 			} else if (file.isFile()) {
 				enterable = false;
-				if (!path.endsWith(".gif")) {
+				if (!(name.endsWith(".gif"))) {
 					// try and do the image thing!
 					images = new BufferedImage[] { ImageIO.read(file) };
 				} else {
@@ -133,10 +136,8 @@ public class Item {
 				thumbnail = (fillImageScale(images[0], Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE));
 				path = file.getAbsolutePath();
 
-				name = file.getName();
-				if(name.endsWith(".enc")) {
-					name = Viewer.encryptor.decryptName(name.substring(0, name.length() - 4));
-				}
+				
+				
 			} else if (path.equals("\\drives")) {
 
 				name = "Drives";
@@ -181,7 +182,7 @@ public class Item {
 	}
 	
 	private void createAlbum(final File file) {
-		
+		//TODO FIX THIS FOR ENCRYPTED FILES
 		File[] files = file.listFiles(new FilenameFilter() {
 			
 			@Override
