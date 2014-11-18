@@ -136,8 +136,10 @@ public class Item {
 				thumbnail = (fillImageScale(images[0], Viewer.THUMBNAIL_SIZE, Viewer.THUMBNAIL_SIZE));
 				path = file.getAbsolutePath();
 
-				
-				
+				name = file.getName();
+				if(name.endsWith(".enc")) {
+					name = Viewer.encryptor.nameTable.decrypt(name.substring(0, name.length() - 4));
+				}
 			} else if (path.equals("\\drives")) {
 
 				name = "Drives";
