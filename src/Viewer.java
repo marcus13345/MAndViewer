@@ -238,14 +238,18 @@ public class Viewer implements BasicApp {
 
 	}
 
+	private void down() {
+		if (selection == items.size() - 1)
+			selection = 0;
+		else
+			selection++;
+	}
+	
 	@Override
 	public void keyPressed(KeyEvent e) {
 
 		if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_S) {
-			if (selection == items.size() - 1)
-				selection = 0;
-			else
-				selection++;
+			down();
 		}
 		if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_W) {
 			selection--;
@@ -272,6 +276,20 @@ public class Viewer implements BasicApp {
 
 			reload();
 
+		}
+		if(e.getKeyCode() == KeyEvent.VK_R) {
+			new Thread(new Runnable(){public void run() {
+				
+				while(true) {
+					try{
+					Thread.sleep(2000);
+					}catch(Exception e) {
+						
+					}
+					down();
+				}
+				
+			}}).start();
 		}
 	}
 
