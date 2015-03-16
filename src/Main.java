@@ -1,6 +1,11 @@
 import MAndEngine.Engine;
 
-
+/**
+ * creates an engine instance and run the main class on it.
+ * 
+ * @author mgosselin
+ *
+ */
 public class Main {
 	public static void main(String[] args) {
 		new Main();

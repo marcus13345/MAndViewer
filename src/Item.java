@@ -25,7 +25,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * 
+ * this class is an image or folder item, even a gif player.
+ * the main class tells this puppy dog to render and if you press enter,
+ * this class tells maine where that item will bring it.
  * @author Marcus
  *
  */
@@ -33,6 +35,7 @@ public class Item {
 
 	// to track when to advance frame
 	private long lastTime = System.currentTimeMillis();
+	
 	// every how many ms?
 	private long interval = 100;
 
@@ -69,9 +72,12 @@ public class Item {
 		try {
 			final File file = new File(path);
 			name = file.getName();
+			//TODO add mandencryptor compliance later
+			/*
 			if(name.endsWith(".enc")) {
 				name = Viewer.encryptor.nameTable.decrypt(name.substring(0, name.length() - 4));
 			}
+			*/
 			if (file.isDirectory()) {
 				try {
 					//so many locals, had to split it up
@@ -142,9 +148,12 @@ public class Item {
 				path = file.getAbsolutePath();
 
 				name = file.getName();
+				//TODO add mandencryptor compliance later
+				/*
 				if(name.endsWith(".enc")) {
 					name = Viewer.encryptor.nameTable.decrypt(name.substring(0, name.length() - 4));
 				}
+				*/
 			} else if (path.equals("\\drives")) {
 
 				name = "Drives";

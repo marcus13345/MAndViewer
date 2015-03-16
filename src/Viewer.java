@@ -18,6 +18,14 @@ import MAndEngine.BasicApp;
 import MAndEngine.Engine;
 import MAndEngine.Variable;
 
+/**
+ * does literally just about everything relating to rendering the images on the screens
+ * to taking in key events to navigate around. only thing it doesn't do is load in the
+ * images themselves, thats a job for item.
+ * 
+ * @author mgosselin
+ *
+ */
 public class Viewer implements BasicApp {
 
 	public static final int THUMBNAIL_SIZE = 80;
@@ -54,7 +62,7 @@ public class Viewer implements BasicApp {
 
 	private static Thread populationThread;
 
-	public static Encryptor encryptor = new Encryptor("bcnsfw");
+	//public static Encryptor encryptor = new Encryptor("");
 	
 	@Override
 	public Dimension getResolution() {
